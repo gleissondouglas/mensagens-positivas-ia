@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mensagens Positivas</title>
+    <style>
+      :root{
+        --bg1:#0b1020;
+        --bg2:#0f1a3a;
+        --card:#0f1730cc;
+        --stroke:#26335f;
+        --text:#e8ecff;
+        --muted:#a9b2d6;
+
+        --accent:#7c5cff;   /* roxo */
+        --accent2:#2ee9a6;  /* verde */
+        --user:#7c5cff;
+        --ai:#141f3f;
+        --aiStroke:#2a3a6b;
+        --danger:#ff5c7a;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+        color: var(--text);
+        background:
+          radial-gradient(1200px 800px at 15% 10%, rgba(124,92,255,.35), transparent 60%),
+          radial-gradient(900px 600px at 85% 30%, rgba(46,233,166,.18), transparent 55%),
+          linear-gradient(180deg, var(--bg1), var(--bg2));
+        padding: 24px;
+        overflow-x: hidden;
+      }
+
+      /* “partículas” suaves no fundo */
+      .orb {
+        position: fixed;
+        inset: auto;
+        width: 240px;
+        height: 240px;
+        border-radius: 999px;
+        filter: blur(30px);
+        opacity: .28;
+        pointer-events: none;
+        animation: float 10s ease-in-out infinite;
+      }
+      .orb.one { background: rgba(124,92,255,.9); top: 8%; left: 8%; }
+      .orb.two { background: rgba(46,233,166,.7); top: 18%; right: 10%; animation-duration: 13s; }
+      .orb.three { background: rgba(255,92,122,.55); bottom: 8%; left: 18%; animation-duration: 16s; }
+
+      @keyframes float {
+        0%,100% { transform: translateY(0) translateX(0) scale(1); }
+        50% { transform: translateY(-18px) translateX(10px) scale(1.04); }
+      }
+
+      .wrap {
+        max-width: 880px;
+        margin: 0 auto;
+      }
+
+      .header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 14px;
+      }
+
+      .title {
+        line-height: 1.15;
+      }
+      .title h1 {
+        margin: 0;
+        font-size: 22px;
+        letter-spacing: .2px;
+      }
+      .title p {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .badge {
+        border: 1px solid var(--stroke);
+        background: rgba(15,23,48,.65);
+        padding: 8px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .badge b { color: var(--text); font-weight: 650; }
+
+      .card {
+        border: 1px solid var(--stroke);
+        background: var(--card);
+        border-radius: 16px;
+        box-shadow: 0 18px 50px rgba(0,0,0,.35);
+        overflow: hidden;
+        backdrop-filter: blur(10px);
+      }
+
+      .panel {
+        padding: 16px;
+        border-bottom: 1px solid rgba(38,51,95,.65);
+      }
+
+      form {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        align-items: end;
+      }
+      .full { grid-column: 1 / -1; }
+
+      label {
+        display: block;
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+
+      input {
+        width: 100%;
+        padding: 11px 12px;
+        border: 1px solid rgba(38,51,95,.85);
+        background: rgba(8,12,28,.65);
+        color: var(--text);
+        border-radius: 12px;
+        outline: none;
+        transition: border-color .2s ease, box-shadow .2s ease;
+      }
+      input:focus {
+        border-color: rgba(124,92,255,.9);
+        box-shadow: 0 0 0 4px rgba(124,92,255,.18);
+      }
+
+      .actions {
+        display: flex;
+        gap: 10px;
+      }
+
+      button {
+        border: 0;
+        border-radius: 12px;
+        padding: 12px 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform .08s ease, opacity .2s ease;
+        user-select: none;
+      }
+      button:active { transform: translateY(1px); }
+      button:disabled { opacity: .6; cursor: not-allowed; }
+
+      .primary {
+        background: linear-gradient(135deg, var(--accent), #4aa3ff);
+        color: white;
+        flex: 1;
+      }
+      .secondary {
+        background: rgba(238,240,255,.08);
+        border: 1px solid rgba(124,92,255,.35);
+        color: var(--text);
+      }
+
+      .chat {
+        padding: 16px;
+        display: grid;
+        gap: 12px;
+        max-height: 55vh;
+        overflow: auto;
+      }
+
+      /* scrollbar discreto */
+      .chat::-webkit-scrollbar { width: 10px; }
+      .chat::-webkit-scrollbar-thumb { background: rgba(124,92,255,.25); border-radius: 999px; }
+      .chat::-webkit-scrollbar-track { background: rgba(0,0,0,.15); }
+
+      .msgRow {
+        display: flex;
+        gap: 10px;
+        align-items: flex-end;
+      }
+      .msgRow.user { justify-content: flex-end; }
+      .msgRow.ai { justify-content: flex-start; }
+
+      .bubble {
+        max-width: min(680px, 88%);
+        padding: 12px 14px;
+        border-radius: 16px;
+        line-height: 1.35;
+        white-space: pre-wrap;
+        position: relative;
+        animation: pop .18s ease-out;
+      }
+      @keyframes pop {
+        from { transform: translateY(6px); opacity: .0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+
+      .bubble.user {
+        background: linear-gradient(135deg, rgba(124,92,255,.95), rgba(74,163,255,.85));
+        color: #fff;
+        border-bottom-right-radius: 6px;
+      }
+      .bubble.ai {
+        background: rgba(20,31,63,.75);
+        border: 1px solid rgba(42,58,107,.85);
+        color: var(--text);
+        border-bottom-left-radius: 6px;
+      }
+
+      .meta {
+        margin-top: 6px;
+        font-size: 11px;
+        color: rgba(232,236,255,.7);
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .miniBtn {
+        border: 1px solid rgba(124,92,255,.4);
+        background: rgba(124,92,255,.14);
+        color: var(--text);
+        border-radius: 10px;
+        padding: 6px 10px;
+        font-size: 12px;
+        cursor: pointer;
+      }
+      .miniBtn:active { transform: translateY(1px); }
+
+      .errorBox {
+        margin: 0 16px 16px;
+        background: rgba(255,92,122,.12);
+        border: 1px solid rgba(255,92,122,.35);
+        color: #ffd7df;
+        padding: 12px 14px;
+        border-radius: 14px;
+        display: none;
+      }
+
+      /* Typing indicator */
+      .typing {
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+      }
+      .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 999px;
+        background: rgba(232,236,255,.7);
+        animation: blink 1s infinite ease-in-out;
+      }
+      .dot:nth-child(2){ animation-delay: .15s; }
+      .dot:nth-child(3){ animation-delay: .3s; }
+      @keyframes blink {
+        0%,100% { transform: translateY(0); opacity: .55; }
+        50% { transform: translateY(-3px); opacity: 1; }
+      }
+
+      .footerNote {
+        padding: 12px 16px 16px;
+        color: var(--muted);
+        font-size: 12px;
+        border-top: 1px solid rgba(38,51,95,.35);
+      }
+      .kbd {
+        border: 1px solid rgba(38,51,95,.9);
+        background: rgba(8,12,28,.6);
+        border-radius: 8px;
+        padding: 2px 6px;
+        font-size: 11px;
+        color: rgba(232,236,255,.9);
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="orb one"></div>
+    <div class="orb two"></div>
+    <div class="orb three"></div>
+
+    <div class="wrap">
+      <div class="header">
+        <div class="title">
+          <h1>Mensagens Positivas</h1>
+          <p>Nome + 3 palavras → mensagem personalizada (estilo conversa).</p>
+        </div>
+        <div class="badge">
+          Backend: <b>/generate</b> em <b>localhost:3000</b>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="panel">
+          <form id="form">
+            <div class="full">
+              <label for="name">Seu nome</label>
+              <input id="name" name="name" placeholder="Ex.: Gleisson" autocomplete="off" />
+            </div>
+
+            <div>
+              <label for="word1">Palavra 1</label>
+              <input id="word1" name="word1" placeholder="Ex.: foco" autocomplete="off" />
+            </div>
+
+            <div>
+              <label for="word2">Palavra 2</label>
+              <input id="word2" name="word2" placeholder="Ex.: calma" autocomplete="off" />
+            </div>
+
+            <div class="full">
+              <label for="word3">Palavra 3</label>
+              <input id="word3" name="word3" placeholder="Ex.: coragem" autocomplete="off" />
+            </div>
+
+            <div class="actions full">
+              <button id="btnGenerate" class="primary" type="submit">Gerar mensagem</button>
+              <button id="btnClear" class="secondary" type="button">Limpar chat</button>
+            </div>
+          </form>
+        </div>
+
+        <div id="error" class="errorBox"></div>
+
+        <div id="chat" class="chat" aria-live="polite"></div>
+
+        <div class="footerNote">
+          Dica: após preencher os campos, você também pode apertar <span class="kbd">Enter</span> para gerar.
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const API_URL = "/generate";
+
+      const form = document.getElementById("form");
+      const btnGenerate = document.getElementById("btnGenerate");
+      const btnClear = document.getElementById("btnClear");
+      const chat = document.getElementById("chat");
+      const errorEl = document.getElementById("error");
+
+      function showError(message) {
+        errorEl.style.display = "block";
+        errorEl.textContent = message;
+      }
+      function clearError() {
+        errorEl.style.display = "none";
+        errorEl.textContent = "";
+      }
+
+      function scrollToBottom() {
+        chat.scrollTop = chat.scrollHeight;
+      }
+
+      function nowTime() {
+        const d = new Date();
+        return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      }
+
+      function addMessage({ side, text, canCopy = false }) {
+        const row = document.createElement("div");
+        row.className = `msgRow ${side}`;
+
+        const bubble = document.createElement("div");
+        bubble.className = `bubble ${side}`;
+        bubble.textContent = text;
+
+        const meta = document.createElement("div");
+        meta.className = "meta";
+        const time = document.createElement("span");
+        time.textContent = nowTime();
+        meta.appendChild(time);
+
+        if (canCopy) {
+          const copyBtn = document.createElement("button");
+          copyBtn.className = "miniBtn";
+          copyBtn.type = "button";
+          copyBtn.textContent = "Copiar";
+          copyBtn.addEventListener("click", async () => {
+            try {
+              await navigator.clipboard.writeText(text);
+              copyBtn.textContent = "Copiado!";
+              setTimeout(() => (copyBtn.textContent = "Copiar"), 1200);
+            } catch {
+              showError("Não consegui copiar automaticamente. Copie manualmente.");
+            }
+          });
+          meta.appendChild(copyBtn);
+        }
+
+        bubble.appendChild(meta);
+        row.appendChild(bubble);
+        chat.appendChild(row);
+        scrollToBottom();
+
+        return row;
+      }
+
+      function addTyping() {
+        const row = document.createElement("div");
+        row.className = "msgRow ai";
+
+        const bubble = document.createElement("div");
+        bubble.className = "bubble ai";
+        const typing = document.createElement("div");
+        typing.className = "typing";
+        typing.innerHTML = `<span class="dot"></span><span class="dot"></span><span class="dot"></span>`;
+        bubble.appendChild(typing);
+
+        row.appendChild(bubble);
+        chat.appendChild(row);
+        scrollToBottom();
+        return row;
+      }
+
+      function setLoading(isLoading) {
+        btnGenerate.disabled = isLoading;
+        btnGenerate.textContent = isLoading ? "Gerando..." : "Gerar mensagem";
+      }
+
+      btnClear.addEventListener("click", () => {
+        clearError();
+        chat.innerHTML = "";
+        document.getElementById("name").focus();
+      });
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        clearError();
+
+        const name = document.getElementById("name").value.trim();
+        const word1 = document.getElementById("word1").value.trim();
+        const word2 = document.getElementById("word2").value.trim();
+        const word3 = document.getElementById("word3").value.trim();
+
+        if (!name || !word1 || !word2 || !word3) {
+          showError("Preencha seu nome e as 3 palavras.");
+          return;
+        }
+
+        // Mensagem do usuário (estilo “enviado”)
+        addMessage({
+          side: "user",
+          text: `Meu nome é ${name}. Palavras: ${word1}, ${word2}, ${word3}.`,
+        });
+
+        setLoading(true);
+        const typingRow = addTyping();
+
+        try {
+          const response = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, word1, word2, word3 }),
+          });
+
+          const data = await response.json();
+
+          // remove o "digitando..."
+          typingRow.remove();
+
+          if (!response.ok) {
+            showError(data?.error || "Erro ao gerar mensagem.");
+            return;
+          }
+
+          addMessage({
+            side: "ai",
+            text: data.message,
+            canCopy: true,
+          });
+
+        } catch (err) {
+          typingRow.remove();
+          showError("Falha de rede ou servidor desligado. Confirme se o backend está rodando.");
+        } finally {
+          setLoading(false);
+        }
+      });
+
+      // Mensagem inicial (opcional)
+      addMessage({
+        side: "ai",
+        text: "Oi! Me diga seu nome e 3 palavras. Eu vou gerar uma mensagem positiva para você.",
+      });
+    </script>
+  </body>
+</html>
